@@ -1,0 +1,30 @@
+version: '2'
+services:
+  incident-manage-service:
+    image: incident-manage-service:latest
+    restart: always
+    dns_search: .
+    privileged: true
+    expose:
+      - "8080"
+    container_name: "incident-manage-service"
+    volumes:
+      - /data/backup:/apps/logs/
+    environment:
+      - spring.profiles.active=prod
+      - log.level=DEBUG
+      - TZ=Asia/Shanghai
+
+  incident-manage-web:
+    image: incident-management:latest
+    restart: always
+    dns_search: .
+    ports:
+      - "30092:443"
+    depends_on:
+      - incident-manage-service
+    container_name: "incident-manage-web"
+    volumes:
+      - /home/data/incident-manage-web/config/:/etc/nginx/conf.d
+      - /home/data/incident-manage-web/ssl/:/etc/nginx/ssl
+      - /home/data/incident-manage-web/data/dist/:/usr/share/nginx/html

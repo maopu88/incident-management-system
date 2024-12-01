@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+    <springProperty name="LOG_LEVEL" source="log.level"/>
+    <property name="PROJECT" value="incident-manage" />
+    <property name="ROOT" value="/apps/logs/incident-manage" />
+    <property name="FILESIZE" value="50MB" />
+    <property name="MAXHISTORY" value="180" />
+
+    <turboFilter class="ch.qos.logback.classic.turbo.MDCFilter">
+        <MDCKey>request_id</MDCKey>
+        <Value>filterLog</Value>
+        <onMatch>DENY</onMatch>
+        <onMismatch>NEUTRAL</onMismatch>
+    </turboFilter>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder charset="utf-8">
+            <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [${PROJECT}] [%thread] [%X{request_id:-NO_REQUEST_ID}] %level %logger{35} - %msg%n</Pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${LOG_LEVEL}</level>
+        </filter>
+    </appender>
+
+        <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="FILE"/>
+            <discardingThreshold>0</discardingThreshold>
+            <queueSize>5000</queueSize>
+        </appender>
+
+    <!-- 统一的日志文件输出，结合 AsyncAppender 异步处理 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder charset="utf-8">
+            <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [${PROJECT}] [%thread] [%X{request_id:-NO_REQUEST_ID}] %level %logger{35} - %msg%n</Pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${ROOT}/${PROJECT}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>${MAXHISTORY}</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${FILESIZE}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${LOG_LEVEL}</level>
+        </filter>
+    </appender>
+
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="ASYNC"/>
+    </root>
+</configuration>

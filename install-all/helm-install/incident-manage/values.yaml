@@ -1,0 +1,18 @@
+# 服务实例数
+replicaCount: 1
+# 镜像拉取策略 默认 Always 也可取值 IfNotPresent
+imagePullPolicy: IfNotPresent
+
+repostory:
+  prefix: registry.local:9001
+tag: "latest"
+
+incidentManageService:
+  enabled: true
+  workload:
+    image: "{{ .Values.repostory.prefix }}/incident-management:{{ .Values.tag }}"
+
+incidentManageWeb:
+  enabled: true
+  workload:
+    image: "{{ .Values.repostory.prefix }}/incident-management-web:{{ .Values.tag }}"

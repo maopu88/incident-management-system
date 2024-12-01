@@ -1,0 +1,86 @@
+{{- if .Values.incidentManageService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: incident-manage-service
+  labels:
+    app: incident-manage-service
+spec:
+  selector:
+    app: incident-manage-service
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+  - IPv4
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: http  
+  type: "ClusterIP"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: incident-manage-service
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: incident-manage-service
+  template:
+    metadata:
+      labels:
+        app: incident-manage-service
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - incident-manage-service
+            topologyKey: kubernetes.io/hostname
+      containers:
+        - name: incident-manage-service
+          image: {{ tpl .Values.incidentManageService.workload.image . }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+            - name: "spring.profiles.active"
+              value: "prod"
+            - name: "logback.level"
+              value: "INFO"
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /smoke
+              port: 8080
+              scheme: HTTP
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /smoke
+              port: 8080
+              scheme: HTTP
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 10
+          volumeMounts:
+          - mountPath: "/apps/logs/"
+            name: "data"
+      volumes:
+      - hostPath:
+          path: "/var/backup/"
+          type: "DirectoryOrCreate"
+        name: "data"
+{{- end }}

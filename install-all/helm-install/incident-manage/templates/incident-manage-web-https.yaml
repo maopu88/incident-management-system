@@ -1,0 +1,198 @@
+{{- if .Values.incidentManageWeb.enabled }}
+apiVersion: "v1"
+kind: "ConfigMap"
+metadata:
+  labels:
+    app: "incident-manage-web-conf"
+  name: "incident-manage-web-conf"
+data:
+  nginx.conf: |-
+    server {
+      listen 443 ssl;
+      server_name www.incident.manage;
+      # SSL config
+      ssl_certificate /etc/nginx/ssl/tls.crt;
+      ssl_certificate_key /etc/nginx/ssl/tls.key;
+      ssl_session_cache shared:SSL:10m;
+      ssl_session_timeout 10m;
+      ssl_protocols TLSv1.2 TLSv1.3;
+      ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';
+      ssl_prefer_server_ciphers on;
+      index index.html index.htm index.php;
+      client_max_body_size 100m;
+      server_tokens off;
+      error_page 497 https://$host$request_uri;
+      location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+      }
+      location /api {
+        proxy_pass http://incident-manage-service:8080;
+        # Proxy settings for timeouts and buffering
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $http_connection;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        # Optimize timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        # Buffer size adjustments
+        proxy_buffering on;
+        proxy_buffers 16 16k;
+        proxy_buffer_size 16k;
+        proxy_busy_buffers_size 32k;
+        proxy_max_temp_file_size 1024m;
+      }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: "ssl-key"
+  name: ssl-key
+data:
+  tls.key: |
+    -----BEGIN PRIVATE KEY-----
+    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDtc3QkYXMbNAbk
+    s8sDByQLdUpgBHu4xwt0fn1I7EpmFfjZB0GGPdY0cGxuXAK+G297rLDMYV1Z4F3A
+    u48Dxx1rZFceN2Dj+4AenL8JZ+mi8XzE12CmwQtBKLK3SzUI/iceoxk1TijPUi+G
+    K26HaaD6WsH+3x2EowQX//lRJc/jnOYLbDieIbTiUErdYsmoy6Ydc0iwZoQ74VXV
+    9UtlYO8+X8ixyQlzNoQJA19/FVF65juP8NE7H7TD6Ln927vm0OIxzgg8LLYPj8c9
+    hEkFAp6MoHDocAQGYu6/esO07b3Pj4LY+TlDRrLYSY9WrYcRwcTYahlAnCxtLt1v
+    b+UX1t1PAgMBAAECggEAINNpJu5h30zd9xfz5MND9GGOmp+ECxNZPg2OfFpOHrbC
+    5B3grRI3XqB8HPWTW3yneM1y045SPW6LB23mY3tPUd1ZPdAiEOJf39uDfWVkIyaH
+    PR8ZOXROff+GVViMSGX6On4JqhjYA3E1KLMwYH/1xSZu0zE8/20Zz8ePS+ySRMDT
+    0OEwkkXsuDOe9nVTBGMUiMUVQcpe6z3foWVMe7qEY/vEbzdle3PSwB0umtk8/QeO
+    F5GG5JggkDmAwC7kFSwdLqBpSmayyQ6mf/IDwMc4HlPs8IBXWLw75f1zRc8LYyOk
+    xL6Fvv2tSTl/mbWniR2uK3bL8UA+DS/VifaxtifVYQKBgQD4df6UwJ9vvKoyjNhn
+    zRhR3nnQ7S5rkS9CFVNajwxk6gtkFgznYPJpOR+MEvIO6eYw+b41Z/lWaOBr+MpH
+    lwVVcZ79049wbOytyCPbzW4RzhsNZBiaRHTYEIzbcQyKGheeR+vE8uitNFL9Bsqb
+    ivstQEJN55JCnL6nlIeOqGHS/QKBgQD0p++Tt80e4oC1IjFHBemOAXGOLFecLnWk
+    GumoeQAbm6S90C7VP1Np7kueTNWd8GCWwvdQfZ5BL3WvSTtg+5YixP+vkhg1es/e
+    nM6/MZ54eBsNuC70aG05F8caseZeCADhgQXspFxRn7PdKBD/rfX4MqHgmFO85zdI
+    Oi4yIW1BOwKBgDg87PzahLwT5io++xSztZeCVexWYzVxzVKV5SIQUuvclet3mkAd
+    D4GFroBUIXoCs1nOjaElAajvYCzQSWje5BQs/aHSaxs1bHUBYix0WT+qeTEUwQTa
+    DeCCDn/1HLN9qG7pNJKFsOjTeR1QljeSw7vAWcGscsylEfp4gh5mOo45AoGBAMFt
+    PIbHXE68uRF8FQWX8Q0qqwLCoAmE2dGCzZU7BRDOvzKqszw5stMfaX2gNYuHDnZj
+    cnCawFG9GggZl+6XOh4HLjc7BBTUIiBYTUTwD+Ai5RC1u7nUDfaDjBDY8c8J+NhQ
+    z8RGNg76epOxJ69ddAhkz4LoK9w/2X8rMHbF4sEdAoGAGokL64HIwoXXa50UU9er
+    ON2vjgLQ7kQaiTsWYjqWejvGaOg/W5ph5UPm3mTMSVvZ5FAOpg9F2Zsy36eT4BvU
+    9zXeb/FvBgfx9Nyor/yRl6E7zjUZXGnm1rBGle4SGuucOOdhGy2OFwKfe1huGdvU
+    QL7HlcvSLIXxyhbLgfJRZ5U=
+    -----END PRIVATE KEY-----
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: "ssl-crt"
+  name: ssl-crt
+data:
+  tls.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIID2zCCAsOgAwIBAgIJANCKGJP4yRjzMA0GCSqGSIb3DQEBCwUAMIGDMQswCQYD
+    VQQGEwJDTjEPMA0GA1UECAwGU2hhblhpMQ0wCwYDVQQHDARYaUFuMQ0wCwYDVQQK
+    DAR0ZXN0MQ0wCwYDVQQLDAR0ZXN0MRwwGgYDVQQDDBN3d3cuaW5jaWRlbnQubWFu
+    YWdlMRgwFgYJKoZIhvcNAQkBFgltbS5xcS5jb20wHhcNMjQxMTI5MTUxNzE0WhcN
+    MjUxMTI5MTUxNzE0WjCBgzELMAkGA1UEBhMCQ04xDzANBgNVBAgMBlNoYW5YaTEN
+    MAsGA1UEBwwEWGlBbjENMAsGA1UECgwEdGVzdDENMAsGA1UECwwEdGVzdDEcMBoG
+    A1UEAwwTd3d3LmluY2lkZW50Lm1hbmFnZTEYMBYGCSqGSIb3DQEJARYJbW0ucXEu
+    Y29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA7XN0JGFzGzQG5LPL
+    AwckC3VKYAR7uMcLdH59SOxKZhX42QdBhj3WNHBsblwCvhtve6ywzGFdWeBdwLuP
+    A8cda2RXHjdg4/uAHpy/CWfpovF8xNdgpsELQSiyt0s1CP4nHqMZNU4oz1Ivhitu
+    h2mg+lrB/t8dhKMEF//5USXP45zmC2w4niG04lBK3WLJqMumHXNIsGaEO+FV1fVL
+    ZWDvPl/IsckJczaECQNffxVReuY7j/DROx+0w+i5/du75tDiMc4IPCy2D4/HPYRJ
+    BQKejKBw6HAEBmLuv3rDtO29z4+C2Pk5Q0ay2EmPVq2HEcHE2GoZQJwsbS7db2/l
+    F9bdTwIDAQABo1AwTjAdBgNVHQ4EFgQUEWlb5ttAYYpHnelU0XAMczaPN5QwHwYD
+    VR0jBBgwFoAUEWlb5ttAYYpHnelU0XAMczaPN5QwDAYDVR0TBAUwAwEB/zANBgkq
+    hkiG9w0BAQsFAAOCAQEABJLMO49aDGTlPAKPigKHwwk/Kma4TYKJCMnU69Hij9lt
+    Iz2oZi4qmZMBkWGzBEMURetEIHz9D0wUZdLthGshzhFM9/BZWX4ubAsDAICowp9h
+    fCocy3zEh4eT+xp0xQmUVveTXklpq/RBr7iyEb3d+tiSoTsUGabEE7f3hEkYNp5A
+    Kjnn8UGhIfNZraNtg+UwazMIdkiNwRoufDTNC8FurOshK76MrnHDmECuQN7Tb9HR
+    fQC85+nXyCV/2NnYnlIPyQeqi/na8//XXSf4Xv8pWZE/IOH4+qYBaNYm2rOLee2e
+    NcbjwLBLFq3BJDFyjzZ5sRFj3/KfJmkxgy5N9lW3sw==
+    -----END CERTIFICATE-----
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: incident-manage-web-https
+  labels:
+    app: incident-manage-web-https
+spec:
+  selector:
+    app: incident-manage-web-https
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+  - IPv4
+  ports:
+    - name: http
+      nodePort: 30092
+      protocol: TCP
+      port: 443
+      targetPort: http
+  type: "NodePort"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: incident-manage-web-https
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: incident-manage-web-https
+  template:
+    metadata:
+      labels:
+        app: incident-manage-web-https
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - incident-manage-web-https
+            topologyKey: kubernetes.io/hostname
+      containers:
+        - name: incident-manage-web-https
+          image: {{ tpl .Values.incidentManageWeb.workload.image . }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 443
+          volumeMounts:
+          - mountPath: "/etc/nginx/conf.d/nginx.conf"
+            name: "config"
+            subPath: nginx.conf
+          - mountPath: "/etc/nginx/ssl/tls.key"
+            name: "sslkey"
+            subPath: tls.key
+          - mountPath: "/etc/nginx/ssl/tls.crt"
+            name: "sslcrt"
+            subPath: tls.crt
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: "incident-manage-web-conf"
+        name: "config"
+      - configMap:
+          defaultMode: 420
+          name: "ssl-key"
+        name: "sslkey"
+      - configMap:
+          defaultMode: 420
+          name: "ssl-crt"
+        name: "sslcrt"
+  {{- end }}
