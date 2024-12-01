@@ -139,7 +139,7 @@
 
 #### 2、压力测试：
 
-
+    使用 Apache JMeter 进行接口性能测试并生成测试报告。
 
 
 ### **部署方案**：
@@ -161,7 +161,8 @@
        ENTRYPOINT ["java", "-jar", "app.jar"] 
 
 - 后台打镜像指令：
-    
+  
+
  docker build --no-cache --build-arg jar_file=incident-management.jar -t incident-management:latest .
     
 - 后台docker run指令：
