@@ -129,3 +129,11 @@
 
   https访问: 自制ssl自签名证书，配置在在前台nginx中，保证系统访问安全。
 
+**后期扩展**：
+  *   数据存数到数据库mysql等数据库中。
+  *   使用Redis作为缓存，并处理其分布式系统中的三缓问题及双写一致问题。
+  *   基于Spring Cloud Gateway 实现API 网关，方便动态路由、及限流、熔断等操作。
+  *   基于Spring Security 安全框架，结合JWT，实现认证、授权、细粒度权限控制等。
+  *   集成ELK实现日志采集，方便日志查看及问题定位。
+*   结合Kubernetes 的 Horizontal Pod Autoscaler (HPA) 实现基于指标的自动伸缩，自动调整应用副本数量。
+
